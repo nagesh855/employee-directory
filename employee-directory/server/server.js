@@ -15,9 +15,7 @@ const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:3000,http://
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-app.use(cors({
-  origin: allowedOrigins,
-}));
+app.use(cors());
 app.use(express.json());
 
 mongoose
