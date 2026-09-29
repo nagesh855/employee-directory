@@ -1,0 +1,277 @@
+{
+  "info": {
+    "_postman_id": "5b8e7e5c-8c1c-4c7d-a9b2-employee-directory",
+    "name": "Employee Directory API",
+    "description": "Full backend verification collection for the Employee Directory MERN API.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.request.headers.upsert({ key: 'Accept', value: 'application/json' });"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "token", "value": "" },
+    { "key": "departmentId", "value": "" },
+    { "key": "employeeId", "value": "" },
+    { "key": "testEmail", "value": "" },
+    { "key": "testPassword", "value": "Password123!" },
+    { "key": "nonexistentId", "value": "000000000000000000000000" }
+  ],
+  "item": [
+    {
+      "name": "01 Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Tester\",\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/register"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('testEmail', `employee.directory.${Date.now()}@example.com`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('register returns 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "if (json.token) pm.collectionVariables.set('token', json.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('login returns 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.token).to.be.a('string');",
+                  "pm.collectionVariables.set('token', json.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": "{{baseUrl}}/api/auth/me"
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('get current user returns 200', () => pm.response.to.have.status(200));" ] } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 Departments",
+      "item": [
+        {
+          "name": "Create Department",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Engineering {{$timestamp}}\",\n  \"description\": \"Product engineering team\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/departments"
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('create department returns 201', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('departmentId', pm.response.json()._id);" ] } }
+          ]
+        },
+        {
+          "name": "List Departments",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "{{baseUrl}}/api/departments?page=1&limit=10" },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('list departments returns 200', () => pm.response.to.have.status(200));", "pm.expect(pm.response.json()).to.have.property('totalPages');" ] } } ]
+        },
+        {
+          "name": "Get Department",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "{{baseUrl}}/api/departments/{{departmentId}}" },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('get department returns 200', () => pm.response.to.have.status(200));" ] } } ]
+        },
+        {
+          "name": "Update Department",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Engineering Updated {{$timestamp}}\",\n  \"description\": \"Updated product engineering team\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/departments/{{departmentId}}"
+          },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('update department returns 200', () => pm.response.to.have.status(200));" ] } } ]
+        }
+      ]
+    },
+    {
+      "name": "03 Employees",
+      "item": [
+        {
+          "name": "Create Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Alex Johnson\",\n  \"email\": \"alex.{{$timestamp}}@example.com\",\n  \"phone\": \"555-0100\",\n  \"position\": \"Software Engineer\",\n  \"department\": \"{{departmentId}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/employees"
+          },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('create employee returns 201', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('employeeId', pm.response.json()._id);" ] } } ]
+        },
+        {
+          "name": "List Employees",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "{{baseUrl}}/api/employees?page=1&limit=10" },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('list employees returns 200', () => pm.response.to.have.status(200));", "pm.expect(pm.response.json()).to.have.property('totalPages');" ] } } ]
+        },
+        {
+          "name": "Get Employee",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "{{baseUrl}}/api/employees/{{employeeId}}" },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('get employee returns 200', () => pm.response.to.have.status(200));" ] } } ]
+        },
+        {
+          "name": "Update Employee",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"position\": \"Senior Software Engineer\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/employees/{{employeeId}}"
+          },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('update employee returns 200', () => pm.response.to.have.status(200));" ] } } ]
+        },
+        {
+          "name": "Search Employees",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "{{baseUrl}}/api/employees/search?q=engineer" },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('search employees returns 200', () => pm.response.to.have.status(200));", "pm.expect(pm.response.json().data).to.be.an('array');" ] } } ]
+        },
+        {
+          "name": "Department Employees",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "{{baseUrl}}/api/departments/{{departmentId}}/employees?page=1&limit=10" },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('department employees returns 200', () => pm.response.to.have.status(200));", "pm.expect(pm.response.json().data).to.be.an('array');" ] } } ]
+        },
+        {
+          "name": "Update Employee Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"inactive\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/employees/{{employeeId}}/status"
+          },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('update employee status returns 200', () => pm.response.to.have.status(200));", "pm.expect(pm.response.json().status).to.eql('inactive');" ] } } ]
+        },
+        {
+          "name": "Employee Stats",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "{{baseUrl}}/api/employees/stats" },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('employee stats returns 200', () => pm.response.to.have.status(200));", "pm.expect(pm.response.json().data).to.be.an('array');" ] } } ]
+        },
+        {
+          "name": "Delete Employee",
+          "request": { "method": "DELETE", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "{{baseUrl}}/api/employees/{{employeeId}}" },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('delete employee returns 200', () => pm.response.to.have.status(200));" ] } } ] }
+      ]
+    },
+    {
+      "name": "04 Remaining Department Cleanup",
+      "item": [
+        {
+          "name": "Delete Department",
+          "request": { "method": "DELETE", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "{{baseUrl}}/api/departments/{{departmentId}}" },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('delete department returns 200', () => pm.response.to.have.status(200));" ] } } ] }
+      ]
+    },
+    {
+      "name": "05 Negative Cases",
+      "item": [
+        {
+          "name": "Missing Token Returns 401",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/employees" },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('missing token returns 401', () => pm.response.to.have.status(401));" ] } } ]
+        },
+        {
+          "name": "Bad Department Body Returns 400",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"description\": \"Missing department name\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/departments"
+          },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('bad department body returns 400', () => pm.response.to.have.status(400));" ] } } ]
+        },
+        {
+          "name": "Invalid Status Returns 400",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"pending\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/employees/{{employeeId}}/status"
+          },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('invalid status returns 400', () => pm.response.to.have.status(400));" ] } } ]
+        },
+        {
+          "name": "Invalid Employee Id Returns 404",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "{{baseUrl}}/api/employees/{{nonexistentId}}" },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('nonexistent employee returns 404', () => pm.response.to.have.status(404));" ] } } ]
+        },
+        {
+          "name": "Invalid Department Id Returns 404",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "{{baseUrl}}/api/departments/{{nonexistentId}}" },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('nonexistent department returns 404', () => pm.response.to.have.status(404));" ] } } ]
+        }
+      ]
+    }
+  ]
+}
