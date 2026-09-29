@@ -9,6 +9,7 @@ function Dashboard() {
   const [stats, setStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -49,15 +50,27 @@ function Dashboard() {
           <p className="eyebrow">Employee Directory</p>
           <h1>Good to see you, {user?.name}</h1>
         </div>
+        <button
+          className="mobile-menu-toggle"
+          type="button"
+          aria-label={mobileNavOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          aria-expanded={mobileNavOpen}
+          aria-controls="dashboard-navigation"
+          onClick={() => setMobileNavOpen(!mobileNavOpen)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
         <button className="logout-btn" onClick={handleLogout}>Log out</button>
       </header>
 
-      <nav className="main-nav" aria-label="Main navigation">
-        <Link className="nav-link active" to="/dashboard"><span aria-hidden="true">⌂</span> Dashboard</Link>
-        <Link className="nav-link" to="/employees"><span aria-hidden="true">♙</span> Employees</Link>
-        <Link className="nav-link" to="/departments"><span aria-hidden="true">▦</span> Departments</Link>
-        <Link className="nav-link" to="/analytics"><span aria-hidden="true">▥</span> Analytics</Link>
-        <Link className="nav-link" to="/settings"><span aria-hidden="true">⚙</span> Settings</Link>
+      <nav id="dashboard-navigation" className={`main-nav${mobileNavOpen ? ' is-open' : ''}`} aria-label="Main navigation">
+        <Link className="nav-link active" to="/dashboard" onClick={() => setMobileNavOpen(false)}><span aria-hidden="true">⌂</span> Dashboard</Link>
+        <Link className="nav-link" to="/employees" onClick={() => setMobileNavOpen(false)}><span aria-hidden="true">♙</span> Employees</Link>
+        <Link className="nav-link" to="/departments" onClick={() => setMobileNavOpen(false)}><span aria-hidden="true">▦</span> Departments</Link>
+        <Link className="nav-link" to="/analytics" onClick={() => setMobileNavOpen(false)}><span aria-hidden="true">▥</span> Analytics</Link>
+        <Link className="nav-link" to="/settings" onClick={() => setMobileNavOpen(false)}><span aria-hidden="true">⚙</span> Settings</Link>
       </nav>
 
       <main className="page-content">

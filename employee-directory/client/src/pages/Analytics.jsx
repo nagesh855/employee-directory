@@ -144,13 +144,13 @@ function Analytics() {
                     <tbody>
                       {employees.map((employee) => (
                         <tr key={employee._id}>
-                          <td>
+                          <td data-label="Name">
                             <strong>{employee.name}</strong>
                             <small>{employee.email}</small>
                           </td>
-                          <td>{employee.position}</td>
-                          <td>{employee.department?.name || 'Unassigned'}</td>
-                          <td>
+                          <td data-label="Position">{employee.position}</td>
+                          <td data-label="Department">{employee.department?.name || 'Unassigned'}</td>
+                          <td data-label="Status">
                             <button className={`status-pill ${employee.status}`} type="button" disabled>
                               {employee.status}
                             </button>
